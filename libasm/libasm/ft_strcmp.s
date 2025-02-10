@@ -1,28 +1,25 @@
 BITS 64
 
 SECTION .text
-GLOBAL ft_strcmp
 
-ft_strcmp:
-    xor rax, rax            ; char c = NULL
-    xor rbx, rbx            ; char h = NULL
-    jmp loop                ; jump to loop
+    GLOBAL ft_read
+    extern __errno_location
 
-loop:
-    mov al, BYTE [rdi]      ; c = *dest
-    mov bl, BYTE [rsi]      ; h = *src
-    cmp al, 0               ; if (c == \0)
-    je ft_strcmp_end        ; return ()
-    cmp bl, 0               ; if (h == \0)
-    je ft_strcmp_end        ; return ()
-    cmp al, bl              ; if (c != h)
-    jne ft_strcmp_end       ; reutrn ()
-    inc rdi                 ; *dest++
-    inc rsi                 ; *src
-    jmp loop                ; jump to loop
+ft_read:
+    mov rax, 0                     ; Загружаем в rax номер системного вызова read (0)
+    syscall                         ; Вызываем read из syscall
 
-ft_strcmp_end:
-    movzx rax, al           ; move from low registr (al) to 64-x registr (rax) with 0 byte
-    movzx rbx, bl           ; move from low registr (bl) to 64-x registr (rbx) with 0 byte
-    sub rax, rbx            ; temp = (c - h)
-    ret                     ; return (temp)
+    cmp rax, 0                      ; Проверяем, rax >= 0?
+    jge ft_read_end                 ; Если rax >= 0 (чтение успешно), выходим из функции
+
+
+    neg rax                         ; Инвертируем rax (делаем его положительным, получаем код ошибки)
+    mov rbx, rax                    ; Сохраняем код ошибки в rbx
+
+    call __errno_location wrt ..plt  ; Вызываем __errno_location, получаем адрес переменной errno в rax
+    mov [rax], ebx                   ; Записываем код ошибки по адресу errno
+
+    mov rax, -1                      ; Возвращаем -1, чтобы сигнализировать об ошибке
+
+ft_read_end:
+    ret                              ; Завершаем функцию, результат остается в raxы

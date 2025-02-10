@@ -1,20 +1,20 @@
 BITS 64
 
-SECTION .text
-GLOBAL ft_strlen
+    SECTION .text
 
+        GLOBAL ft_strlen
 
 ft_strlen:
-    xor rax, rax;                ; int i = 0
-    cmp rdi, 0;                   ; char *str == NULL
-    je ft_strlen_end               ; if (char *str == NULL) => return (NULL)
-    jmp loop;                    ; jump to loop
+    xor rax, rax            ; Обнуляем rax (используется для подсчета длины)
+    mov rdi, rdi            ; Загружаем указатель на строку в rdi (он уже там, но явно указываем)
+    
+.loop:
+    cmp BYTE [rdi], 0       ; Проверяем, равен ли текущий символ '\0' (окончание строки)
+    je ft_strlen_end                ; Если да, переходим к завершению
 
-loop:
-    cmp BYTE [rdi + rax], 0;     ; if (*str == '\0')
-    je ft_strlen_end              ; if (!str) return (i)
-    inc rax;                     ; i++
-    jmp loop;                    ; jump to loop
+    inc rdi                 ; Двигаем указатель на следующий символ (rdi++)
+    inc rax                 ; Увеличиваем счетчик длины (rax++)
+    jmp .loop               ; Повторяем цикл
 
 ft_strlen_end:
-    ret;                         ; return (i) d
+    ret                     ; Возвращаем длину строки (rax)

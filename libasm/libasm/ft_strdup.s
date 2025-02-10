@@ -1,33 +1,32 @@
-;use malloc
 BITS 64
 
 SECTION .text
-GLOBAL ft_strdup
-extern malloc
 
+    GLOBAL ft_strdup
 
-; char *strdup(const char *s);
-; rdi = s
+        extern malloc
+        extern ft_strlen
+
 ft_strdup:
+    mov rsi, rdi         ; Копируем указатель на исходную строку (s) в RSI
+    push rdi             ; Сохраняем исходный указатель (s) в стек, так как он понадобится позже
 
-    mov rsi, rdi     ; Load source pointer into RSI (source string)
-    push rdi         ; Use for source string later on
-    extern ft_strlen
-    call ft_strlen
+    call ft_strlen       ; Вызываем ft_strlen для определения длины строки
 
-    inc rax         ; increment by one for 0 length string, this is for the nul terminator
-    mov rdi, rax    ; place strlen result in first argument(rdi) for malloc
-    push rax        ; used to set counter
-    mov rax, 0
-    call malloc wrt ..plt
-    cmp rax, 0      ; verify if malloc returned NULL(0)
-    je .end
-    
-    ; move from rsi to rdi
-    mov rdi, rax    ; Load destination pointer into RDI (string destination)
-    pop rcx
-    pop rsi         ; Load s on stack into source string
-    cld             ; Clear direction flag (increment mode)
-    rep movsb       ; Copy ECX bytes from [RSI] to [RDI]
-.end:
-    ret
+    inc rax              ; Увеличиваем rax на 1 (добавляем место для завершающего символа '\0')
+    mov rdi, rax         ; Копируем длину строки (включая '\0') в RDI (аргумент для malloc)
+    push rax             ; Сохраняем длину строки в стек (используется как счетчик копирования)
+    mov rax, 0           ; Обнуляем RAX перед вызовом malloc
+    call malloc wrt ..plt ; Вызываем malloc, который вернёт указатель на выделенную память в RAX
+
+    cmp rax, 0           ; Проверяем, вернул ли malloc NULL (ошибка выделения памяти)
+    je ft_strdup_end              ; Если malloc вернул NULL, выходим из функции (ret)
+
+    mov rdi, rax         ; Загружаем указатель на выделенную память в RDI (назначение)
+    pop rcx              ; Восстанавливаем длину строки в RCX (счетчик копирования)
+    pop rsi              ; Восстанавливаем указатель на исходную строку (s) из стека
+    cld                  ; Устанавливаем направление копирования (слева направо, автоинкремент)
+    rep movsb            ; Копируем RCX байтов из RSI в RDI (реплицированное копирование)
+
+ft_strdup_end:
+    ret                  ; Возвращаем указатель на дубликат строки (или NULL при ошибке)

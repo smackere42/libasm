@@ -1,24 +1,29 @@
 BITS 64
 
 SECTION .text
-    global ft_write
-    extern __errno_location  ; Required to set errno in case of error
 
-; ssize_t write(int fd(rdi), char *buf(rsi), size_t count(rdx))
-ft_write:                  ; rdi = dest ; rsi = src
-    mov rax, 1             ; write syscall number is 1
-    syscall                ; all parameter to the write syscall are already in order
-                           
-                           ; syscall result is placed in rax
-    cmp rax, 0              ; check result for success (0), if true return
-    jge ft_write_end                
-    
-    ; setup errno value
-    neg rax                 ; negate rax to get positive errno value
-    mov rbx, rax            ; store errno in rbx
-    call __errno_location wrt ..plt   ; get pointer to errno (pointer is into rax)
-    mov [rax], ebx          ; store errno value inside errno ptr
-    mov rax, -1             ; return -1 to indicate failure
+    GLOBAL ft_write
+        extern __errno_location
+
+; ssize_t write(int fd, const void *buf, size_t count)
+; Входные параметры (передаются через регистры):
+; - rdi: файловый дескриптор (fd)
+; - rsi: указатель на буфер (buf)
+; - rdx: количество байтов для записи (count)
+ft_write:
+    mov rax, 1                 ; Загружаем номер системного вызова write (1) в rax
+    syscall                    ; Вызываем системный вызов write(rdi, rsi, rdx)
+
+    cmp rax, 0                 ; Проверяем, rax >= 0 (успешная запись?)
+    jge ft_write_end           ; Если да, выходим из функции
+
+    neg rax                    ; Инвертируем rax, делая его положительным (получаем код ошибки)
+    mov rbx, rax               ; Сохраняем код ошибки в rbx
+
+    call __errno_location wrt ..plt  ; Вызываем __errno_location, чтобы получить указатель на errno
+    mov [rax], ebx             ; Записываем код ошибки в errno
+
+    mov rax, -1                ; Возвращаем -1 (индикатор ошибки)
 
 ft_write_end:
-    ret
+    ret                        ; Возвращаем rax (количество записанных байтов или -1 при ошибке)

@@ -1,24 +1,26 @@
 BITS 64
 
 SECTION .text
-    GLOBAL ft_read
-    extern __errno_location  ; Required to set errno in case of error
 
-; ssize_t read(int fd(rdi), char *buf(rsi), size_t count(rdx))
-ft_read:                  ; rdi = dest ; rsi = src
-    mov rax, 0             ; read syscall number is 0
-    syscall                ; all parameter to the read syscall are already in order
-                           
-                           ; syscall result is placed in rax
-    cmp rax, 0              ; check result for success (0), if true return
-    jge ft_read_end                
-    
-    ; setup errno value
-    neg rax                 ; negate rax to get positive errno value
-    mov rbx, rax            ; store errno in rbx
-    call __errno_location wrt ..plt  ; get pointer to errno (pointer is into rax)
-    mov [rax], ebx          ; store errno value inside errno ptr
-    mov rax, -1             ; return -1 to indicate failure
+    GLOBAL ft_read
+    extern __errno_location
+
+ft_read:
+    mov rax, 0                     ; Загружаем в rax номер системного вызова read (0)
+    syscall                         ; Вызываем syscall (системный вызов read)
+                                    ; После вызова:
+                                    ; - rax содержит количество прочитанных байтов или ошибку (если < 0)
+
+    cmp rax, 0                      ; Проверяем, больше ли rax (результат syscall) нуля
+    jge ft_read_end                 ; Если rax >= 0, то ошибок нет, выходим из функции
+
+    neg rax                         ; Инвертируем rax (делаем его положительным, чтобы получить код ошибки)
+    mov rbx, rax                    ; Сохраняем код ошибки в rbx
+
+    call __errno_location wrt ..plt  ; Вызываем __errno_location, он возвращает указатель на errno в rax
+    mov [rax], ebx                   ; Сохраняем код ошибки в errno
+
+    mov rax, -1                      ; Возвращаем -1 в случае ошибки
 
 ft_read_end:
-    ret
+    ret                              ; Завершаем функцию, результат остается в rax
